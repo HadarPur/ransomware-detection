@@ -1,0 +1,38 @@
+import os
+import math
+import zlib
+import numpy as np
+import pandas as pd
+
+def shannon_entropy(data):
+    if not data:
+        return 0
+    probs = [data.count(b) / len(data) for b in set(data)]
+    return -sum(p * math.log2(p) for p in probs)
+
+
+def chunk_entropy(data, chunk_size=4096):
+    chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+    entropies = [shannon_entropy(chunk) for chunk in chunks if chunk]
+    return np.mean(entropies), np.std(entropies)
+
+
+def compression_ratio(data):
+    return len(zlib.compress(data)) / max(len(data), 1)
+
+
+def extract_features(filepath):
+    with open(filepath, "rb") as f:
+        data = f.read()
+
+    entropy = shannon_entropy(data)
+    mean_ent, std_ent = chunk_entropy(data)
+
+    return {
+        "file_size": len(data),
+        "entropy": entropy,
+        "entropy_mean": mean_ent,
+        "entropy_std": std_ent,
+        "compression_ratio": compression_ratio(data),
+        "zero_byte_ratio": data.count(b'\x00') / len(data),
+    }
