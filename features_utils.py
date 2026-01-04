@@ -3,6 +3,7 @@ import math
 import zlib
 import numpy as np
 import pandas as pd
+from visualization_utils import visualization
 
 def shannon_entropy(data):
     if not data:
@@ -27,9 +28,15 @@ def extract_features(filepath):
 
     entropy = shannon_entropy(data)
     mean_ent, std_ent = chunk_entropy(data)
+    file_name = os.path.basename(filepath)
+
+    _, file_extension = os.path.splitext(file_name)
 
     return {
+        "file_name": file_name,
+        "file_name_length": len(file_name),
         "file_size": len(data),
+        "file_extension": file_extension.lower(),
         "entropy": entropy,
         "entropy_mean": mean_ent,
         "entropy_std": std_ent,
