@@ -22,7 +22,7 @@ Prerequisite
 ```
 
 🏗 System Architecture
-- `main.py` — orchestrates extraction, feature extraction, visualization, training, and prediction.
+- `app.py` — orchestrates extraction, feature extraction, visualization, training, and prediction.
 - `file_utils.py` — zip extraction and feature extraction helpers.
 - `visualization_utils.py` — plotting functions for features.
 - `classifiers.py` — rule-based classifier, statistical thresholding, ML training and prediction, ensemble logic.
