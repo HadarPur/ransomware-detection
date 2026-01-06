@@ -4,7 +4,7 @@ Description
 - Small Python project to extract features from files (clean / encrypted), visualize features, train classifiers (rule-based, statistical thresholds, ML) and produce ensemble decisions.
 
 Prerequisite
-- Edit the file paths at the top of `main.py` to point to your zip files before running:
+- Edit the file paths at the top of `app.py` to point to your zip files before running:
   - `./files/Original_Files.zip`
   - `./files/Encrypted_Files_2.zip`
   - `./files/More_Clean_Files.zip`
