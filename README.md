@@ -13,12 +13,12 @@ Prerequisite
 - Create and activate a virtual environment:
 ```
     python -m venv rd-env
-    source rd-env/bin/activate     \# Linux/Mac
-    rd-env\Scripts\activate        \# Windows
+    source rd-env/bin/activate     # Linux/Mac
+    rd-env\Scripts\activate        # Windows
 ```
 - Install required packages:
 ```
-    pip install biopython pandas scikit-learn matplotlib openai
+    pip install pandas scikit-learn matplotlib
 ```
 
 🏗 System Architecture
