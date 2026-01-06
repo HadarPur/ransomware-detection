@@ -70,6 +70,14 @@ def read_file_data(root_dir: str, label: str, variant=None) -> pd.DataFrame:
     return pd.DataFrame(records)
 
 def extract_features_from_files(clean_out, encrypted_out):
+    out_features = "features.csv"
+
+    if os.path.exists(out_features):
+        print(f"[SKIP] {out_features} already exists and is not empty.")
+        df = pd.read_csv(out_features)
+        return df
+
+
     # Build DataFrames
     original_df = read_file_data(clean_out, label="CLEAN")
 
@@ -98,7 +106,6 @@ def extract_features_from_files(clean_out, encrypted_out):
 
     df = pd.concat([original_df, encrypted_df], ignore_index=True)
 
-    print(df.head(10))
     df.to_csv("features.csv", index=False)
     print(f"\nSaved features to features.csv with {len(df)} rows.")
 
