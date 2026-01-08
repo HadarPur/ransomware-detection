@@ -10,18 +10,17 @@ from sklearn.preprocessing import StandardScaler
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
 
-
 class RansomwareDetector:
     def __init__(self):
-        # Approach A: Random Forest [cite: 31]
-        self.rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-        # Approach B: Logistic Regression [cite: 31]
-        self.lr_model = LogisticRegression()
-        # Approach C: K-Nearest Neighbors [cite: 31]
+        # Approach A: Random Forest
+        self.rf_model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
+        # Approach B: Logistic Regression
+        self.lr_model = LogisticRegression(class_weight='balanced')
+        # Approach C: K-Nearest Neighbors
         self.knn_model = KNeighborsClassifier(n_neighbors=5)
 
         self.scaler = StandardScaler()
-        self.feature_cols = ['entropy', 'entropy_mean', 'entropy_std', 'compression_ratio', 'zero_byte_ratio']
+        self.feature_cols = ['entropy', 'entropy_mean', 'entropy_std', 'compression_ratio', 'zero_byte_ratio', 'chi_square', 'serial_byte_correlation']
 
     def train(self, df):
         """
@@ -29,7 +28,7 @@ class RansomwareDetector:
         """
         logger.info("--- Starting Training Phase ---")
 
-        # Log dataset composition [cite: 34]
+        # Log dataset composition
         total_files = len(df)
         encrypted_count = df['is_encrypted'].sum()
         logger.info(
@@ -38,7 +37,7 @@ class RansomwareDetector:
         X = df[self.feature_cols]
         y = df['is_encrypted']
 
-        # Log feature averages to understand the "Static Features" [cite: 3, 26]
+        # Log feature averages to understand the "Static Features"
         stats = X.groupby(y).mean()
         logger.info(f"Feature means per class:\n{stats}")
 
@@ -52,12 +51,12 @@ class RansomwareDetector:
 
     def predict_file(self, file_features_dict, verbose=False):
         """
-        Predicts a single file and optionally logs model agreement[cite: 32, 33].
+        Predicts a single file and optionally logs model agreement.
         """
         features_df = pd.DataFrame([[file_features_dict[col] for col in self.feature_cols]], columns=self.feature_cols)
         features_scaled = self.scaler.transform(features_df)
 
-        # Get individual model votes [cite: 32]
+        # Get individual model votes
         votes = [
             int(self.rf_model.predict(features_scaled)[0]),
             int(self.lr_model.predict(features_scaled)[0]),
@@ -80,7 +79,7 @@ class RansomwareDetector:
 
     def evaluate_batch(self, df, dataset_name="Testing"):
         """
-        Runs batch prediction and logs overall performance metrics[cite: 34].
+        Runs batch prediction and logs overall performance metrics.
         """
         logger.info(f"--- Starting {dataset_name} Evaluation ---")
 
@@ -93,5 +92,12 @@ class RansomwareDetector:
 
         logger.info(f"Batch processed: {len(df)} files.")
         logger.info(f"Full Model Consensus (3/3 votes): {full_agreement} / {len(df)} files.")
+
+        # Save to CSV
+        predictions_df = pd.DataFrame(results.tolist())
+        final_output = pd.concat([df.reset_index(drop=True), predictions_df], axis=1)
+        output_path = "ransomware_detection_results.csv"
+        final_output.to_csv(output_path, index=False)
+        print(f"Full results successfully exported to {output_path}")
 
         return pd.Series(verdicts)

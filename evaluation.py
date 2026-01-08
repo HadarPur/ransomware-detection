@@ -15,7 +15,15 @@ def evaluate_model_performance(detector, test_df):
     print("\n--- Overall Performance ---")
     print(f"Accuracy: {accuracy_score(y_true, y_pred):.4f}")
     print("\nConfusion Matrix:")
-    print(confusion_matrix(y_true, y_pred))
+    cm = confusion_matrix(y_true, y_pred)
+    print(cm)
+
+    TN, FP, FN, TP = cm.ravel()
+    print(f"\nTP: {TP}")
+    print(f"TN: {TN}")
+    print(f"FP: {FP}")
+    print(f"FN: {FN}")
+
     print("\nDetailed Report:")
     print(classification_report(y_true, y_pred))
 
