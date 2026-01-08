@@ -5,9 +5,9 @@ from visualization_utils import feature_visualization
 from detector import RansomwareDetector
 from evaluation import evaluate_model_performance
 
-CLEAN_FILES_PATH = "./files/Original_Files.zip"
-ENCRYPTED_FILES_PATH = "./files/Encrypted_Files_2.zip"
-VALIDATION_FILES_PATH = "./files/More_Clean_Files.zip" # for validation
+# CLEAN_FILES_PATH = "./files/Original_Files.zip"
+# ENCRYPTED_FILES_PATH = "./files/Encrypted_Files_2.zip"
+# VALIDATION_FILES_PATH = "./files/More_Clean_Files.zip" # for validation
 
 def main():
     base_out = "extracted_files"
@@ -15,10 +15,10 @@ def main():
     encrypted_out = os.path.join(base_out, "encrypted")
     validation_out = os.path.join(base_out, "validation")
 
-    print("----------- Zip extraction -----------")
-    extract_zip_if_needed(CLEAN_FILES_PATH, clean_out)
-    extract_zip_if_needed(ENCRYPTED_FILES_PATH, encrypted_out, password="Password1")
-    extract_zip_if_needed(VALIDATION_FILES_PATH, validation_out)
+    # print("----------- Zip extraction -----------")
+    # extract_zip_if_needed(CLEAN_FILES_PATH, clean_out)
+    # extract_zip_if_needed(ENCRYPTED_FILES_PATH, encrypted_out, password="Password1")
+    # extract_zip_if_needed(VALIDATION_FILES_PATH, validation_out)
 
     print("\n----------- Features extraction -----------")
     df = extract_features_from_files(clean_out, encrypted_out)
