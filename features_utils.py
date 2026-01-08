@@ -3,7 +3,6 @@ import math
 import zlib
 import numpy as np
 import pandas as pd
-from visualization_utils import visualization
 
 def get_full_extension(file_name):
     # This splits the string at the first dot and takes everything after it
@@ -80,6 +79,5 @@ def extract_features(filepath):
         "compression_ratio": com_rat,
         "zero_byte_ratio": zero_byte_ratio,
         "chi_square": chi_sq,
-        "serial_byte_correlation": ser_byte_correlation,
-
+        "serial_byte_correlation": ser_byte_correlation
     }
