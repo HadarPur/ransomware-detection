@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import logging
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 class RansomwareDetector:
     def __init__(self):
-        # Approach A: Random Forest
-        self.rf_model = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
+        # Approach A: SVC
+        self.svc_model = SVC(kernel='rbf', C=0.1, gamma='scale', probability=True)
         # Approach B: Logistic Regression
-        self.lr_model = LogisticRegression(class_weight='balanced')
+        self.lr_model = LogisticRegression(C=0.01, class_weight='balanced')
         # Approach C: K-Nearest Neighbors
         self.knn_model = KNeighborsClassifier(n_neighbors=5)
 
@@ -43,7 +43,7 @@ class RansomwareDetector:
 
         X_scaled = self.scaler.fit_transform(X)
 
-        self.rf_model.fit(X_scaled, y)
+        self.svc_model.fit(X_scaled, y)
         self.lr_model.fit(X_scaled, y)
         self.knn_model.fit(X_scaled, y)
 
@@ -58,7 +58,7 @@ class RansomwareDetector:
 
         # Get individual model votes
         votes = [
-            int(self.rf_model.predict(features_scaled)[0]),
+            int(self.svc_model.predict(features_scaled)[0]),
             int(self.lr_model.predict(features_scaled)[0]),
             int(self.knn_model.predict(features_scaled)[0])
         ]

@@ -42,9 +42,10 @@ def plot_feature_distribution(df, feature, target, title, y_label, out_dir="plot
     plt.savefig(out_path, bbox_inches="tight", dpi=150)
     plt.close()
 
-    print(f"Saved plot to: {out_path}")
+    print(f"[INFO] Saved plot to: {out_path}")
 
 def run_exploratory_visualizations(df):
+    print("\n--- Generating Exploratory Visualizations ---")
     plot_feature_distribution(df, "compression_ratio", "label", "Compression Ratio by Class", "Compressed / Original Size")
     plot_feature_distribution(df, "entropy_std", "label", "Entropy Variance Across Chunks", "Entropy Std")
     plot_feature_distribution(df, "entropy", "label", "Global Entropy by Class", "Entropy")

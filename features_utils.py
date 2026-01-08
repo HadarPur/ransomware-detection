@@ -81,3 +81,30 @@ def extract_features(filepath):
         "chi_square": chi_sq,
         "serial_byte_correlation": ser_byte_correlation
     }
+
+
+def pre_process_features(df):
+    # Keep only rows where label matches the encryption status
+    mask = ((df["valid_encryption"] == 1) & (df["label"] == "ENCRYPTED")) | \
+           ((df["valid_encryption"] == 0) & (df["label"] == "CLEAN"))
+
+    filtered_df = df.loc[mask].copy()
+
+    # Identify dropped rows
+    dropped_df = df.loc[~mask]
+    if not dropped_df.empty:
+        print(f"[INFO] Dropped {len(dropped_df)} files because they were invalid or mislabeled:")
+        for _, row in dropped_df.iterrows():
+            variant_info = f" \t | variant: {row['variant']}" if 'variant' in row else ""
+            print(f"  - {row['file_name']}{variant_info}")
+    else:
+        print("[INFO] No files were dropped.")
+
+    # Drop column
+    processed_df = filtered_df.drop(columns=["valid_encryption"])
+
+    # Save
+    processed_df.to_csv("encrypted_valid_only.csv", index=False)
+    print(f"\n[INFO] Saved {len(processed_df)} rows to encrypted_valid_only.csv")
+
+    return processed_df

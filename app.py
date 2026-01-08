@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from file_utils import extract_zip_if_needed, extract_features_from_files
+from features_utils import pre_process_features
 from visualization_utils import run_exploratory_visualizations, plot_model_evaluation
 from detector import RansomwareDetector
 from evaluation import evaluate_model_performance
@@ -15,16 +16,20 @@ def main():
     encrypted_out = os.path.join(base_out, "encrypted")
     validation_out = os.path.join(base_out, "validation")
 
-    # print("----------- Zip extraction -----------")
+    print("----------- Zip extraction -----------")
     extract_zip_if_needed(CLEAN_FILES_PATH, clean_out)
     extract_zip_if_needed(ENCRYPTED_FILES_PATH, encrypted_out, password="Password1")
     extract_zip_if_needed(VALIDATION_FILES_PATH, validation_out)
 
+
     print("\n----------- Features extraction -----------")
     df = extract_features_from_files(clean_out, encrypted_out)
-    print(df.head(40))
+
+    print("\n----------- Pre Processing -----------")
+    df = pre_process_features(df)
 
     print("\n----------- Feature Rationale (Exploration) -----------")
+    print(f'{df.head(40)}')
     run_exploratory_visualizations(df)
 
     print("\n----------- Run Models -----------")
