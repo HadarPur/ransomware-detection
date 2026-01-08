@@ -7,7 +7,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 
 # Setup logging configuration to print to console
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
 class RansomwareDetector:
@@ -26,8 +26,6 @@ class RansomwareDetector:
         """
         Trains all three models and logs data statistics.
         """
-        logger.info("--- Starting Training Phase ---")
-
         # Log dataset composition
         total_files = len(df)
         encrypted_count = df['is_encrypted'].sum()
@@ -47,7 +45,7 @@ class RansomwareDetector:
         self.lr_model.fit(X_scaled, y)
         self.knn_model.fit(X_scaled, y)
 
-        logger.info("Models trained successfully using Random Forest, Logistic Regression and K-Nearest Neighbors.")
+        logger.info("Models trained successfully using SVC, Logistic Regression and K-Nearest Neighbors.")
 
     def predict_file(self, file_features_dict, verbose=False):
         """
@@ -81,8 +79,6 @@ class RansomwareDetector:
         """
         Runs batch prediction and logs overall performance metrics.
         """
-        logger.info(f"--- Starting {dataset_name} Evaluation ---")
-
         results = df.apply(lambda row: self.predict_file(row.to_dict()), axis=1)
         verdicts = [r['verdict'] for r in results]
 
