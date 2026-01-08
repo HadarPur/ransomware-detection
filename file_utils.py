@@ -61,6 +61,7 @@ def read_file_data(root_dir: str, label: str, variant=None) -> pd.DataFrame:
             try:
                 feats = extract_features(path)
                 feats["label"] = label
+                feats["is_encrypted"] = 1 if label == 'ENCRYPTED' else 0
                 if variant is not None:
                     feats["variant"] = variant
                 records.append(feats)
