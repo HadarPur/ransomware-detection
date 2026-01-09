@@ -3,6 +3,12 @@ import math
 import zlib
 import numpy as np
 import pandas as pd
+from logger import setup_logging, get_logger
+import logging
+
+# Setup logging configuration to print to console
+setup_logging(level=logging.INFO, log_to_file=False)
+logger = get_logger(__name__)
 
 def get_full_extension(file_name):
     # This splits the string at the first dot and takes everything after it
@@ -93,18 +99,18 @@ def pre_process_features(df):
     # Identify dropped rows
     dropped_df = df.loc[~mask]
     if not dropped_df.empty:
-        print(f"[INFO] Dropped {len(dropped_df)} files because they were invalid or mislabeled:")
+        logger.info(f"Dropped {len(dropped_df)} files because they were invalid or mislabeled:")
         for _, row in dropped_df.iterrows():
             variant_info = f" \t | variant: {row['variant']}" if 'variant' in row else ""
-            print(f"  - {row['file_name']}{variant_info}")
+            logger.info(f"  - {row['file_name']}{variant_info}")
     else:
-        print("[INFO] No files were dropped.")
+        logger.info("No files were dropped.")
 
     # Drop column
     processed_df = filtered_df.drop(columns=["valid_encryption"])
 
     # Save
     processed_df.to_csv("encrypted_valid_only.csv", index=False)
-    print(f"\n[INFO] Saved {len(processed_df)} rows to encrypted_valid_only.csv")
+    logger.info(f"Saved {len(processed_df)} rows to encrypted_valid_only.csv")
 
     return processed_df

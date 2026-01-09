@@ -4,6 +4,12 @@ import zipfile
 import pandas as pd
 from features_utils import extract_features
 import hashlib
+from logger import setup_logging, get_logger
+import logging
+
+# Setup logging configuration to print to console
+setup_logging(level=logging.INFO, log_to_file=False)
+logger = get_logger(__name__)
 
 def extract_zip(zip_path: str, out_dir: str, password=None) -> str:
     """
@@ -13,7 +19,7 @@ def extract_zip(zip_path: str, out_dir: str, password=None) -> str:
     """
     os.makedirs(out_dir, exist_ok=True)
 
-    print("Start extracting: ", zip_path)
+    logger.info("Start extracting: ", zip_path)
 
     with zipfile.ZipFile(zip_path, "r") as zf:
         zf.extractall(
@@ -34,7 +40,7 @@ def extract_zip(zip_path: str, out_dir: str, password=None) -> str:
                     pwd=password.encode("utf-8") if password else None
                 )
 
-    print("Extracted to:", out_dir)
+    logger.info("Extracted to:", out_dir)
     return out_dir
 
 def extract_zip_if_needed(zip_path, out_dir, password=None):
@@ -43,10 +49,10 @@ def extract_zip_if_needed(zip_path, out_dir, password=None):
     or is empty.
     """
     if os.path.exists(out_dir) and os.listdir(out_dir):
-        print(f"[SKIP] {out_dir} already exists and is not empty.")
+        logger.skip(f"{out_dir} already exists and is not empty.")
         return
 
-    print(f"[EXTRACTING] {zip_path} → {out_dir}")
+    logger.info(f"Extracted: {zip_path} → {out_dir}")
     extract_zip(zip_path, out_dir, password=password)
 
 def read_file_data(root_dir: str, label: str, variant=None) -> pd.DataFrame:
@@ -67,7 +73,7 @@ def read_file_data(root_dir: str, label: str, variant=None) -> pd.DataFrame:
                     feats["variant"] = variant
                 records.append(feats)
             except Exception as e:
-                print(f"Skipping {path}: {e}")
+                logger.info(f"Skipping {path}: {e}")
 
     return pd.DataFrame(records)
 
@@ -160,35 +166,35 @@ def extract_features_from_files(clean_out, encrypted_out):
     out_features = "features.csv"
 
     if os.path.exists(out_features):
-        print(f"[SKIP] {out_features} already exists. Loading it...")
+        logger.skip(f"{out_features} already exists. Loading it...")
         return pd.read_csv(out_features)
 
-    print("[INFO] Reading CLEAN files...")
+    logger.info("Reading CLEAN files...")
     original_df = read_file_data(clean_out, label="CLEAN")
     original_df["valid_encryption"] = 0  # CLEAN always 0
-    print(f"[INFO] Found {len(original_df)} CLEAN files.")
+    logger.info(f"Found {len(original_df)} CLEAN files.")
 
     encrypted_root = os.path.join(encrypted_out, "Encrypted_Files")
     encrypted_parts = []
 
-    print(f"[INFO] Scanning encrypted files under {encrypted_root}...")
+    logger.info(f"Scanning encrypted files under {encrypted_root}...")
     for d in sorted(os.listdir(encrypted_root)):
         variant_dir = os.path.join(encrypted_root, d)
         if os.path.isdir(variant_dir):
             part_df = read_file_data(variant_dir, label="ENCRYPTED", variant=d)
-            print(f"[INFO] Variant '{d}': {len(part_df)} files")
+            logger.info(f"Variant '{d}': {len(part_df)} files")
             encrypted_parts.append(part_df)
 
     encrypted_df = pd.concat(encrypted_parts, ignore_index=True) if encrypted_parts else pd.DataFrame()
-    print(f"[INFO] Total encrypted files: {len(encrypted_df)}")
+    logger.info(f"Total encrypted files: {len(encrypted_df)}")
 
-    print("[INFO] Computing hash map of original files...")
+    logger.info("Computing hash map of original files...")
     originals = collect_originals_with_hashes(clean_out)
-    print(f"[INFO] {len(originals)} original files hashed.")
+    logger.info(f"{len(originals)} original files hashed.")
 
     # Compute valid_encryption for encrypted files
     valid_map = {}
-    print("[INFO] Computing valid_encryption flags for encrypted files...")
+    logger.info("Computing valid_encryption flags for encrypted files...")
     for dirpath, _, filenames in os.walk(encrypted_root):
         for enc_name in filenames:
             enc_path = os.path.join(dirpath, enc_name)
@@ -203,13 +209,13 @@ def extract_features_from_files(clean_out, encrypted_out):
             try:
                 enc_hash = sha256_file(enc_path)
             except OSError:
-                print(f"[WARN] Failed to read {enc_path}")
+                logger.warn(f"Failed to read {enc_path}")
                 continue
 
             identical = any(enc_hash == orig_hash for _, orig_hash in matches)
             valid_map[enc_path] = 0 if identical else 1
 
-    print(f"[INFO] Assigning valid_encryption flags to DataFrame rows...")
+    logger.info(f"Assigning valid_encryption flags to DataFrame rows...")
     encrypted_df = encrypted_df.copy()
     flags = []
     for enc_rel in encrypted_df["file_name"].astype(str).tolist():
@@ -221,6 +227,6 @@ def extract_features_from_files(clean_out, encrypted_out):
     # Concatenate all data
     df = pd.concat([original_df, encrypted_df], ignore_index=True)
     df.to_csv(out_features, index=False)
-    print(f"[OK] Saved {len(df)} rows to {out_features}")
+    logger.info(f"Saved {len(df)} rows to {out_features}")
 
     return df

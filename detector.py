@@ -5,10 +5,12 @@ from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
+from logger import setup_logging, get_logger
+import logging
 
 # Setup logging configuration to print to console
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
-logger = logging.getLogger(__name__)
+setup_logging(level=logging.INFO, log_to_file=False)
+logger = get_logger(__name__)
 
 class RansomwareDetector:
     def __init__(self):
@@ -94,6 +96,6 @@ class RansomwareDetector:
         final_output = pd.concat([df.reset_index(drop=True), predictions_df], axis=1)
         output_path = "ransomware_detection_results.csv"
         final_output.to_csv(output_path, index=False)
-        print(f"Full results successfully exported to {output_path}")
 
+        logger.info(f"Results saved to {output_path}")
         return pd.Series(verdicts)
