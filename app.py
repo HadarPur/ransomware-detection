@@ -1,24 +1,26 @@
-import os
-import pandas as pd
-from file_utils import extract_zip_if_needed, extract_features_from_files
-from data_exploration import run_exploratory_visualizations
-from features_utils import pre_process_features
-from detector import RansomwareDetector
-from model_evaluation import evaluate_model_performance, plot_model_evaluation
-from logger import setup_logging, get_logger
 import logging
+import os
+
 from sklearn.model_selection import train_test_split
+
+from data_exploration import run_exploratory_visualizations
+from detector import RansomwareDetector
+from features_utils import pre_process_features
+from file_utils import extract_zip_if_needed, extract_features_from_files
+from logger import setup_logging, get_logger
+from model_evaluation import plot_model_evaluation
 
 files_to_extract = False
 CLEAN_FILES_PATH = "./files/Original_Files.zip"
 ENCRYPTED_FILES_PATH = "./files/Encrypted_Files_2.zip"
-VALIDATION_FILES_PATH = "./files/More_Clean_Files.zip" # for validation
+VALIDATION_FILES_PATH = "./files/More_Clean_Files.zip"  # for validation
 
 # Setup logging configuration to print to console
 setup_logging(level=logging.INFO, log_to_file=False)
 
 logger = get_logger(__name__)
 logger.info("Application started - Ransomware Detection\n")
+
 
 def split_data(df, feature_cols, label_col='is_encrypted',
                test_size=0.2, random_state=42):
@@ -84,11 +86,11 @@ def main():
 
     train_dir = os.path.join("model_plots", "train")
     plot_model_evaluation(y_train, train_svc, out_dir=train_dir,
-                          title="Train - SVC Confusion Matrix", file_prefix="svc")
+                          title="Train - SVC Confusion Matrix", file_prefix="AdaBoostClassifier")
     plot_model_evaluation(y_train, train_lr, out_dir=train_dir,
-                          title="Train - Logistic Regression Confusion Matrix", file_prefix="logreg")
+                          title="Train - Logistic Regression Confusion Matrix", file_prefix="LogisticRegression")
     plot_model_evaluation(y_train, train_knn, out_dir=train_dir,
-                          title="Train - KNN Confusion Matrix", file_prefix="knn")
+                          title="Train - KNN Confusion Matrix", file_prefix="KNeighborsClassifier")
 
     plot_model_evaluation(y_train, train_ensemble, out_dir=train_dir,
                           title="Train - Ensemble Confusion Matrix", file_prefix="ensemble")
@@ -99,7 +101,7 @@ def main():
 
     test_dir = os.path.join("model_plots", "test")
     plot_model_evaluation(y_test, test_svc, out_dir=test_dir,
-                          title="Test - SVC Confusion Matrix", file_prefix="SVC")
+                          title="Test - SVC Confusion Matrix", file_prefix="AdaBoostClassifier")
     plot_model_evaluation(y_test, test_lr, out_dir=test_dir,
                           title="Test - Logistic Regression Confusion Matrix", file_prefix="LogisticRegression")
     plot_model_evaluation(y_test, test_knn, out_dir=test_dir,
@@ -110,6 +112,7 @@ def main():
 
     logger.info("----------- False Positive Evaluation -----------")
     # evaluate_model_performance(detector, df_clean)
+
 
 if __name__ == "__main__":
     main()
