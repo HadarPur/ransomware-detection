@@ -7,6 +7,7 @@ from detector import RansomwareDetector
 from model_evaluation import evaluate_model_performance, plot_model_evaluation
 from logger import setup_logging, get_logger
 import logging
+from sklearn.model_selection import train_test_split
 
 files_to_extract = False
 CLEAN_FILES_PATH = "./files/Original_Files.zip"
@@ -18,6 +19,24 @@ setup_logging(level=logging.INFO, log_to_file=False)
 
 logger = get_logger(__name__)
 logger.info("Application started - Ransomware Detection\n")
+
+def split_data(df, feature_cols, label_col='is_encrypted',
+               test_size=0.2, random_state=42):
+    """
+    Splits dataframe into stratified train/test sets.
+    """
+    X = df[feature_cols]
+    y = df[label_col]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y
+    )
+    return X_train, X_test, y_train, y_test
+
 
 def main():
     base_out = "extracted_files"
@@ -46,14 +65,48 @@ def main():
     # Initialize the class we built
     detector = RansomwareDetector()
 
-    # Train the three classification approaches (RF, LR, KNN)
-    detector.train(df)
-    y_pred_labels = detector.evaluate_batch(df)
+    # Split the data
+    X_train, X_test, y_train, y_test = split_data(
+        df,
+        feature_cols=detector.feature_cols,
+        label_col='is_encrypted',
+        test_size=0.2
+    )
 
-    logger.info("----------- Performance Evaluation -----------")
-    # Evaluate on the training set or a split
-    y_pred_numeric = y_pred_labels.map({'ENCRYPTED': 1, 'NOT ENCRYPTED': 0})
-    plot_model_evaluation(df['is_encrypted'], y_pred_numeric)
+    # Train the three classification approaches (SVC, LR, KNN)
+    detector.train(X_train, y_train)
+
+    logger.info("----------- Models Evaluation -----------")
+
+    train_ensemble, train_svc, train_lr, train_knn = detector.evaluate(
+        X_train, y_train, dataset_name="Train"
+    )
+
+    train_dir = os.path.join("model_plots", "train")
+    plot_model_evaluation(y_train, train_svc, out_dir=train_dir,
+                          title="Train - SVC Confusion Matrix", file_prefix="svc")
+    plot_model_evaluation(y_train, train_lr, out_dir=train_dir,
+                          title="Train - Logistic Regression Confusion Matrix", file_prefix="logreg")
+    plot_model_evaluation(y_train, train_knn, out_dir=train_dir,
+                          title="Train - KNN Confusion Matrix", file_prefix="knn")
+
+    plot_model_evaluation(y_train, train_ensemble, out_dir=train_dir,
+                          title="Train - Ensemble Confusion Matrix", file_prefix="ensemble")
+
+    test_ensemble, test_svc, test_lr, test_knn = detector.evaluate(
+        X_test, y_test, dataset_name="Test"
+    )
+
+    test_dir = os.path.join("model_plots", "test")
+    plot_model_evaluation(y_test, test_svc, out_dir=test_dir,
+                          title="Test - SVC Confusion Matrix", file_prefix="SVC")
+    plot_model_evaluation(y_test, test_lr, out_dir=test_dir,
+                          title="Test - Logistic Regression Confusion Matrix", file_prefix="LogisticRegression")
+    plot_model_evaluation(y_test, test_knn, out_dir=test_dir,
+                          title="Test - KNeighborsClassifier Confusion Matrix", file_prefix="KNeighborsClassifier")
+
+    plot_model_evaluation(y_test, test_ensemble, out_dir=test_dir,
+                          title="Test - Ensemble Confusion Matrix", file_prefix="ensemble")
 
     logger.info("----------- False Positive Evaluation -----------")
     # evaluate_model_performance(detector, df_clean)

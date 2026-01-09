@@ -57,49 +57,37 @@ def plot_confidence_distribution(predictions_df):
     plt.ylabel('Number of Files')
     plt.show()
 
-def plot_model_evaluation(y_true, y_pred, out_dir="model_plots"):
-    """
-    Evaluate performance using confusion matrix.
-    """
+def plot_model_evaluation(y_true, y_pred, out_dir="model_plots",
+                          title="Confusion Matrix", file_prefix="confusion_matrix"):
     os.makedirs(out_dir, exist_ok=True)
     cm = confusion_matrix(y_true, y_pred)
 
-    # 3. Print the TP, FP, TN, FN breakdown
     tn, fp, fn, tp = cm.ravel()
-    logger.info(f"True Positives (Caught Ransomware): {tp}")
-    logger.info(f"False Positives (Clean files flagged): {fp}")
-    logger.info(f"True Negatives (Correctly identified clean): {tn}")
-    logger.info(f"False Negatives (Missed Ransomware): {fn}")
-
-    # 4. Print detailed report (Precision, Recall, F1)
-    logger.info(f"Detailed Classification Report:\n{classification_report(y_true, y_pred)}")
+    logger.info(f"[{file_prefix}] TP: {tp} | FP: {fp} | TN: {tn} | FN: {fn}")
+    logger.info(f"[{file_prefix}] Classification report:\n{classification_report(y_true, y_pred, digits=4)}")
 
     plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=['Clean', 'Encrypted'],
-                yticklabels=['Clean', 'Encrypted'])
-
-    plt.title('Final Verdict Confusion Matrix')
+    sns.heatmap(
+        cm, annot=True, fmt='d', cmap='Blues',
+        xticklabels=['Clean', 'Encrypted'],
+        yticklabels=['Clean', 'Encrypted']
+    )
+    plt.title(title)
     plt.ylabel('Actual State')
     plt.xlabel('Predicted State')
 
-    out_path = os.path.join(out_dir, "confusion_matrix.png")
-    plt.savefig(out_path)
+    out_path = os.path.join(out_dir, f"{file_prefix}.png")
+    plt.savefig(out_path, bbox_inches="tight")
     plt.close()
     logger.info(f"Saved Evaluation Plot to: {out_path}\n")
 
-    # Calculate overall metrics
+    # Overall metrics
     acc = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred)  # by default, for positive class (ENCRYPTED)
+    precision = precision_score(y_true, y_pred)
     recall = recall_score(y_true, y_pred)
     f1 = f1_score(y_true, y_pred)
 
-    # Log metrics
-    logger.info(f"-------- Overall Performance --------")
-    logger.info(f"Accuracy: {acc:.4f}")
-    logger.info(f"Precision: {precision:.4f}")
-    logger.info(f"Recall: {recall:.4f}")
-    logger.info(f"F1-score: {f1:.4f}")
-    print("")
-
-
+    logger.info(f"[{file_prefix}] Accuracy: {acc:.4f}")
+    logger.info(f"[{file_prefix}] Precision: {precision:.4f}")
+    logger.info(f"[{file_prefix}] Recall: {recall:.4f}")
+    logger.info(f"[{file_prefix}] F1-score: {f1:.4f}\n")

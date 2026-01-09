@@ -12,7 +12,7 @@ from sklearn.preprocessing import StandardScaler
 setup_logging(level=logging.INFO, log_to_file=False)
 logger = get_logger(__name__)
 
-def plot_feature_distribution(df, feature, target, title, y_label, out_dir="plots"):
+def plot_feature_distribution(df, feature, target, title, y_label, out_dir="data_exploration_plots"):
     """
     Visualizes the relationship between a feature and a target variable.
 
@@ -53,7 +53,7 @@ def plot_feature_distribution(df, feature, target, title, y_label, out_dir="plot
     logger.info(f"Saved plot to: {out_path}")
 
 
-def plot_correlation_matrix(df, out_dir="plots"):
+def plot_correlation_matrix(df, out_dir="data_exploration_plots"):
     os.makedirs(out_dir, exist_ok=True)
 
     plt.figure(figsize=(12, 10))
@@ -66,7 +66,7 @@ def plot_correlation_matrix(df, out_dir="plots"):
     plt.close()
     logger.info(f"Saved correlation matrix to: {out_path}")
 
-def plot_pca(df, features=None, hue="label", out_dir="plots"):
+def plot_pca(df, features=None, hue="label", out_dir="data_exploration_plots"):
     os.makedirs(out_dir, exist_ok=True)
 
     if features is None:
@@ -93,7 +93,7 @@ def plot_pca(df, features=None, hue="label", out_dir="plots"):
 
 
 
-def plot_pairplot(df, features=None, hue="label", out_dir="plots"):
+def plot_pairplot(df, features=None, hue="label", out_dir="data_exploration_plots"):
     os.makedirs(out_dir, exist_ok=True)
 
     if features is None:

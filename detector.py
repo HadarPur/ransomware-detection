@@ -8,6 +8,8 @@ from sklearn.preprocessing import StandardScaler
 from logger import setup_logging, get_logger
 import logging
 from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix
 
 # Setup logging configuration to print to console
 setup_logging(level=logging.INFO, log_to_file=False)
@@ -25,79 +27,60 @@ class RansomwareDetector:
         self.scaler = StandardScaler()
         self.feature_cols = ['entropy', 'entropy_mean', 'entropy_std', 'compression_ratio', 'zero_byte_ratio', 'chi_square_normalized', 'serial_byte_correlation']
 
-    def train(self, df):
-        """
-        Trains all three models and logs data statistics.
-        """
-        # Log dataset composition
-        total_files = len(df)
-        encrypted_count = df['is_encrypted'].sum()
-        logger.info(
-            f"Total files: {total_files} | Encrypted: {encrypted_count} | Clean: {total_files - encrypted_count}")
+    def train(self, X_train, y_train):
+        total_files = len(y_train)
+        encrypted_count = int(y_train.sum())
+        logger.info(f"Train files: {total_files} | Encrypted: {encrypted_count} | Clean: {total_files - encrypted_count}")
 
-        X = df[self.feature_cols]
-        y = df['is_encrypted']
+        # Feature stats on training only
+        stats = X_train.groupby(y_train).mean()
+        logger.info(f"Training feature means per class:\n{stats}\n")
 
-        # Log feature averages to understand the "Static Features"
-        stats = X.groupby(y).mean()
-        logger.info(f"Feature means per class:\n{stats}\n")
+        X_train_scaled = self.scaler.fit_transform(X_train)
 
-        X_scaled = self.scaler.fit_transform(X)
+        self.svc_model.fit(X_train_scaled, y_train)
+        self.lr_model.fit(X_train_scaled, y_train)
+        self.knn_model.fit(X_train_scaled, y_train)
 
-        self.svc_model.fit(X_scaled, y)
-        self.lr_model.fit(X_scaled, y)
-        self.knn_model.fit(X_scaled, y)
+        logger.info("Models trained successfully.\n")
 
-        logger.info("Models trained successfully using SVC, Logistic Regression and K-Nearest Neighbors.")
+    def predict_batch_labels(self, X):
+        X_scaled = self.scaler.transform(X)
 
-    def predict_file(self, file_features_dict, verbose=False):
-        """
-        Predicts a single file and optionally logs model agreement.
-        """
-        features_df = pd.DataFrame([[file_features_dict[col] for col in self.feature_cols]], columns=self.feature_cols)
-        features_scaled = self.scaler.transform(features_df)
+        svc_pred = self.svc_model.predict(X_scaled).astype(int)
+        lr_pred  = self.lr_model.predict(X_scaled).astype(int)
+        knn_pred = self.knn_model.predict(X_scaled).astype(int)
 
-        # Get individual model votes
-        votes = [
-            int(self.svc_model.predict(features_scaled)[0]),
-            int(self.lr_model.predict(features_scaled)[0]),
-            int(self.knn_model.predict(features_scaled)[0])
-        ]
+        votes_sum = svc_pred + lr_pred + knn_pred
+        # majority vote: 1 if at least 2 models predict 1
+        ensemble_pred = (votes_sum >= 2).astype(int)
 
-        encrypted_count = sum(votes)
-        verdict = "ENCRYPTED" if encrypted_count >= 2 else "NOT ENCRYPTED"
-        confidence = (encrypted_count / 3) if verdict == "ENCRYPTED" else (3 - encrypted_count) / 3
+        return ensemble_pred, svc_pred, lr_pred, knn_pred
 
-        if verbose:
-            logger.debug(
-                f"File: {file_features_dict.get('file_name', 'Unknown')} | Votes: {votes} | Verdict: {verdict}")
+    def evaluate(self, X_test, y_test, dataset_name="Test"):
+        ensemble_pred, svc_pred, lr_pred, knn_pred = self.predict_batch_labels(X_test)
 
-        return {
-            "verdict": verdict,
-            "confidence_score": confidence,
-            "votes": votes
-        }
+        logger.info(f"------- Overall {dataset_name} Dataset Results -------")
+        total_files = len(y_test)
+        encrypted_count = int(y_test.sum())
+        logger.info(f"Test files: {total_files} | Encrypted: {encrypted_count} | Clean: {total_files - encrypted_count}")
 
-    def evaluate_batch(self, df, dataset_name="Testing"):
-        """
-        Runs batch prediction, logs overall performance metrics, saves results.
-        """
-        # Run predictions for each row
-        results = df.apply(lambda row: self.predict_file(row.to_dict()), axis=1)
-        verdicts = [r['verdict'] for r in results]
+        logger.info(f"Accuracy: {accuracy_score(y_test, ensemble_pred):.4f}")
+        logger.info(f"Precision: {precision_score(y_test, ensemble_pred):.4f}")
+        logger.info(f"Recall: {recall_score(y_test, ensemble_pred):.4f}")
+        logger.info(f"F1-score: {f1_score(y_test, ensemble_pred):.4f}")
 
-        # Calculate full model agreement (3/3 votes)
-        confidences = [r['confidence_score'] for r in results]
-        full_agreement = sum(1 for c in confidences if c == 1.0)
+        logger.info(f"Confusion matrix:\n{confusion_matrix(y_test, ensemble_pred)}")
+        logger.info(f"Classification report:\n{classification_report(y_test, ensemble_pred, digits=4)}")
 
-        logger.info(f"Full Model Consensus (3/3 votes): {full_agreement} / {len(df)} files")
+        # Optional: per-model metrics (often useful)
+        logger.info(f"------- {dataset_name} results (SVC) ------- ")
+        logger.info(f"\n{classification_report(y_test, svc_pred, digits=4)}")
 
-        # Save predictions with model votes to CSV
-        predictions_df = pd.DataFrame(results.tolist())
-        final_output = pd.concat([df.reset_index(drop=True), predictions_df], axis=1)
-        output_path = "ransomware_detection_results.csv"
-        final_output.to_csv(output_path, index=False)
-        logger.info(f"Results saved to {output_path}\n")
+        logger.info(f"------- {dataset_name} results (LogisticRegression) -------")
+        logger.info(f"\n{classification_report(y_test, lr_pred, digits=4)}")
 
-        # Return verdicts and metrics if needed
-        return pd.Series(verdicts)
+        logger.info(f"------- {dataset_name} results (KNeighborsClassifier) -------")
+        logger.info(f"\n{classification_report(y_test, knn_pred, digits=4)}")
+
+        return ensemble_pred, svc_pred, lr_pred, knn_pred
