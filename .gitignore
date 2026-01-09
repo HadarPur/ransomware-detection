@@ -1,13 +1,4 @@
-.idea/.gitignore
-.idea/misc.xml
-.idea/modules.xml
-.idea/ransomware-detection.iml
-.idea/vcs.xml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/inspectionProfiles/Project_Default.xml
+.idea/
 files/
 extracted_files/
-__pycache__/features_utils.cpython-313.pyc
-__pycache__/file_utils.cpython-313.pyc
-__pycache__/detector.cpython-313.pyc
-__pycache__/evaluation.cpython-313.pyc
+__pycache__/
