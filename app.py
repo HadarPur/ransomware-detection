@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from data_exploration import run_exploratory_visualizations
 from detector import RansomwareDetector
 from features_utils import pre_process_features
-from file_utils import extract_zip_if_needed, extract_features_from_files
+from file_utils import extract_zip_if_needed, extract_features_from_files, extract_features_clean_only
 from logger import setup_logging, get_logger
 from model_evaluation import plot_model_evaluation
 
@@ -56,6 +56,7 @@ def main():
 
     logger.info("----------- Features Extraction -----------")
     df = extract_features_from_files(clean_out, encrypted_out)
+    clean_only_df = extract_features_clean_only(validation_out)
 
     logger.info("----------- Pre Processing -----------")
     df = pre_process_features(df)
@@ -93,7 +94,7 @@ def main():
                           title="Train - KNN Confusion Matrix", file_prefix="KNeighborsClassifier")
 
     plot_model_evaluation(y_train, train_ensemble, out_dir=train_dir,
-                          title="Train - Ensemble Confusion Matrix", file_prefix="ensemble")
+                          title="Train - Ensemble Confusion Matrix", file_prefix="Ensemble")
 
     test_ensemble, test_svc, test_lr, test_knn = detector.evaluate(
         X_test, y_test, dataset_name="Test"
@@ -108,11 +109,10 @@ def main():
                           title="Test - KNeighborsClassifier Confusion Matrix", file_prefix="KNeighborsClassifier")
 
     plot_model_evaluation(y_test, test_ensemble, out_dir=test_dir,
-                          title="Test - Ensemble Confusion Matrix", file_prefix="ensemble")
+                          title="Test - Ensemble Confusion Matrix", file_prefix="Ensemble")
 
-    logger.info("----------- False Positive Evaluation -----------")
-    # evaluate_model_performance(detector, df_clean)
-
+    logger.info("----------- Assess False Positive -----------")
+    # evaluate_model_performance(detector, clean_only_df)
 
 if __name__ == "__main__":
     main()

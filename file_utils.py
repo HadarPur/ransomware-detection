@@ -183,8 +183,10 @@ def extract_features_from_files(clean_out, encrypted_out):
     out_features = "features.csv"
 
     if os.path.exists(out_features):
-        logger.skip(f"{out_features} already exists. Loading it...\n")
-        return pd.read_csv(out_features)
+        logger.skip(f"{out_features} already exists. Loading it...")
+        df = pd.read_csv(out_features)
+        logger.info(f"Found {len(df)} files.")
+        return df
 
     # -----------------------
     # Read CLEAN
@@ -318,3 +320,32 @@ def extract_features_from_files(clean_out, encrypted_out):
     logger.info(f"Saved {len(df)} rows to {out_features}")
 
     return df
+
+def extract_features_clean_only(clean_only_dir, out_features="features_clean_only.csv", dataset_tag="CLEAN_ONLY"):
+    """
+    Extract features ONLY for clean files, for false-positive evaluation.
+
+    Output semantics:
+      - label: "CLEAN"
+      - valid_encryption: 0
+      - dataset_tag: (optional string) to identify this dataset in later analysis
+
+    This method does NOT touch encrypted_out and does NOT compute hashes/pairings.
+    """
+
+    if os.path.exists(out_features):
+        logger.skip(f"{out_features} already exists. Loading it...")
+        df = pd.read_csv(out_features)
+        logger.info(f"Found {len(df)} clean-only files.")
+        return df
+
+    logger.info(f"Reading CLEAN-ONLY files from: {clean_only_dir}")
+    df = read_file_data(clean_only_dir, label="CLEAN")  # assumes you already have this helper
+    df = df.copy()
+
+    logger.info(f"Found {len(df)} clean-only files.")
+    df.to_csv(out_features, index=False)
+    logger.info(f"Saved {len(df)} rows to {out_features}")
+
+    return df
+
