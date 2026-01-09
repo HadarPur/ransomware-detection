@@ -33,7 +33,7 @@ def split_data(df, feature_cols, label_col='is_encrypted',
         y,
         test_size=test_size,
         random_state=random_state,
-        stratify=y
+        stratify=y,
     )
     return X_train, X_test, y_train, y_test
 

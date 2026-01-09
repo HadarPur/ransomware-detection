@@ -163,17 +163,39 @@ def compute_valid_encryption_for_encrypted_df(encrypted_df, encrypted_root, orig
     return out
 
 def extract_features_from_files(clean_out, encrypted_out):
+    """
+    Builds a features dataframe for CLEAN and ENCRYPTED datasets and assigns a
+    'valid_encryption' flag.
+
+    Semantics used here:
+      - CLEAN rows: valid_encryption = 0
+      - ENCRYPTED rows: valid_encryption = 1 by default (assumed encrypted because
+        they come from Encrypted_Files), and set to 0 ONLY if we can prove the
+        encrypted sample is byte-identical to its corresponding original.
+
+    Key fixes vs. your version:
+      1) ENCRYPTED rows default to 1, not 0, when we cannot pair by name (e.g., .thor GUID names).
+      2) Match flags by a stable relative path (variant + filename) when possible,
+         avoiding basename collisions across variants.
+      3) Still supports your original name-substring pairing logic when filenames retain originals.
+    """
     out_features = "features.csv"
 
     if os.path.exists(out_features):
         logger.skip(f"{out_features} already exists. Loading it...\n")
         return pd.read_csv(out_features)
 
+    # -----------------------
+    # Read CLEAN
+    # -----------------------
     logger.info("Reading CLEAN files...")
     original_df = read_file_data(clean_out, label="CLEAN")
     original_df["valid_encryption"] = 0  # CLEAN always 0
     logger.info(f"Found {len(original_df)} CLEAN files.")
 
+    # -----------------------
+    # Read ENCRYPTED
+    # -----------------------
     encrypted_root = os.path.join(encrypted_out, "Encrypted_Files")
     encrypted_parts = []
 
@@ -188,43 +210,108 @@ def extract_features_from_files(clean_out, encrypted_out):
     encrypted_df = pd.concat(encrypted_parts, ignore_index=True) if encrypted_parts else pd.DataFrame()
     logger.info(f"Total encrypted files: {len(encrypted_df)}")
 
+    # If there are no encrypted rows, just save/return the clean df.
+    if encrypted_df.empty:
+        df = original_df.copy()
+        df.to_csv(out_features, index=False)
+        logger.info(f"Saved {len(df)} rows to {out_features}")
+        return df
+
+    # -----------------------
+    # Hash originals
+    # -----------------------
     logger.info("Computing hash map of original files...")
     originals = collect_originals_with_hashes(clean_out)
     logger.info(f"{len(originals)} original files hashed.")
 
+    # Build a fast lookup map: original filename -> original hash
+    # originals items are assumed: orig_name -> (orig_path, orig_hash)
+    orig_hash_by_name = {orig_name: orig_hash for orig_name, (_, orig_hash) in originals.items()}
+
+    # -----------------------
     # Compute valid_encryption for encrypted files
-    valid_map = {}
+    # -----------------------
     logger.info("Computing valid_encryption flags for encrypted files...")
+
+    # We will map by relative path under encrypted_root to avoid basename collisions.
+    # rel_key example: "10-Files/DAT.csv"
+    valid_map = {}
+
     for dirpath, _, filenames in os.walk(encrypted_root):
         for enc_name in filenames:
             enc_path = os.path.join(dirpath, enc_name)
-            matches = [
-                (orig_name, orig_hash)
-                for orig_name, (_, orig_hash) in originals.items()
-                if orig_name in enc_name
-            ]
-            if not matches:
-                continue
+            rel_key = os.path.relpath(enc_path, encrypted_root).replace("\\", "/")
 
-            try:
-                enc_hash = sha256_file(enc_path)
-            except OSError:
-                logger.warn(f"Failed to read {enc_path}")
-                continue
+            # Default assumption: if it's in Encrypted_Files, it's encrypted.
+            # We'll downgrade to 0 only if we can prove it's identical to a corresponding original.
+            flag = 1
 
-            identical = any(enc_hash == orig_hash for _, orig_hash in matches)
-            valid_map[enc_path] = 0 if identical else 1
+            # Try to pair encrypted file to an original via substring match
+            # (your existing logic). This fails for GUID-renamed files like *.thor,
+            # which is fine because default stays 1.
+            matches = [orig_name for orig_name in orig_hash_by_name.keys() if orig_name in enc_name]
 
-    logger.info(f"Assigning valid_encryption flags to DataFrame rows...")
+            if matches:
+                try:
+                    enc_hash = sha256_file(enc_path)
+                except OSError:
+                    logger.warn(f"Failed to read {enc_path}")
+                    # Leave default flag=1; it's in encrypted set but unreadable
+                    valid_map[rel_key] = flag
+                    continue
+
+                # If encrypted file is byte-identical to any matched original, it's not "valid encryption"
+                if any(enc_hash == orig_hash_by_name[m] for m in matches):
+                    flag = 0
+
+            # Store final decision
+            valid_map[rel_key] = flag
+
+    # -----------------------
+    # Assign flags to dataframe rows
+    # -----------------------
+    logger.info("Assigning valid_encryption flags to DataFrame rows...")
     encrypted_df = encrypted_df.copy()
+
+    # IMPORTANT: This assumes read_file_data() gives you a file reference that can be
+    # resolved to a path under encrypted_root. Because your original code uses basename,
+    # I support both:
+    #   - If 'file_name' is already a relative path under variant_dir, we can build rel_key.
+    #   - Otherwise we fall back to variant + basename. If that still fails, default to 1.
+
     flags = []
-    for enc_rel in encrypted_df["file_name"].astype(str).tolist():
-        base = os.path.basename(enc_rel)
-        flag = next((v for p, v in valid_map.items() if os.path.basename(p) == base), 0)
-        flags.append(flag)
+    for _, row in encrypted_df.iterrows():
+        fn = str(row.get("file_name", ""))
+
+        # Determine variant folder if present in df
+        variant = str(row.get("variant", "")).strip()
+
+        # Build a stable rel_key candidate.
+        # Common cases:
+        #  - file_name is "DAT.csv" and variant is "10-Files"  -> "10-Files/DAT.csv"
+        #  - file_name is already "10-Files/DAT.csv"          -> keep
+        #  - file_name is a full path                          -> reduce to basename + variant
+        fn_norm = fn.replace("\\", "/")
+
+        if variant and ("/" not in fn_norm):
+            rel_key = f"{variant}/{os.path.basename(fn_norm)}"
+        else:
+            # If it already looks like a relative path, try to use it.
+            # If it's a full path, this will still include many segments; in that case fallback.
+            rel_key = fn_norm
+
+        # Best-effort: if rel_key not found and we have a variant, fallback to variant/basename
+        if rel_key not in valid_map and variant:
+            rel_key = f"{variant}/{os.path.basename(fn_norm)}"
+
+        # Final default for encrypted files is 1 (assume encrypted)
+        flags.append(valid_map.get(rel_key, 1))
+
     encrypted_df["valid_encryption"] = flags
 
-    # Concatenate all data
+    # -----------------------
+    # Concatenate + save
+    # -----------------------
     df = pd.concat([original_df, encrypted_df], ignore_index=True)
     df.to_csv(out_features, index=False)
     logger.info(f"Saved {len(df)} rows to {out_features}")

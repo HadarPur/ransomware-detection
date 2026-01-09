@@ -18,7 +18,7 @@ logger = get_logger(__name__)
 class RansomwareDetector:
     def __init__(self):
         # Approach A: SVC
-        self.svc_model = SVC(kernel='rbf', C=0.1, gamma='scale', probability=True)
+        self.svc_model = SVC(kernel='rbf', C=1.0, gamma='scale', probability=True)
         # Approach B: Logistic Regression
         self.lr_model = LogisticRegression(C=0.01, class_weight='balanced')
         # Approach C: K-Nearest Neighbors
@@ -66,21 +66,21 @@ class RansomwareDetector:
         logger.info(f"Test files: {total_files} | Encrypted: {encrypted_count} | Clean: {total_files - encrypted_count}")
 
         logger.info(f"Accuracy: {accuracy_score(y_test, ensemble_pred):.4f}")
-        logger.info(f"Precision: {precision_score(y_test, ensemble_pred):.4f}")
-        logger.info(f"Recall: {recall_score(y_test, ensemble_pred):.4f}")
-        logger.info(f"F1-score: {f1_score(y_test, ensemble_pred):.4f}")
+        logger.info(f"Precision: {precision_score(y_test, ensemble_pred, zero_division=0):.4f}")
+        logger.info(f"Recall: {recall_score(y_test, ensemble_pred, zero_division=0):.4f}")
+        logger.info(f"F1-score: {f1_score(y_test, ensemble_pred, zero_division=0):.4f}")
 
         logger.info(f"Confusion matrix:\n{confusion_matrix(y_test, ensemble_pred)}")
-        logger.info(f"Classification report:\n{classification_report(y_test, ensemble_pred, digits=4)}")
+        logger.info(f"Classification report:\n{classification_report(y_test, ensemble_pred, digits=4, zero_division=0)}")
 
         # Optional: per-model metrics (often useful)
         logger.info(f"------- {dataset_name} results (SVC) ------- ")
-        logger.info(f"\n{classification_report(y_test, svc_pred, digits=4)}")
+        logger.info(f"\n{classification_report(y_test, svc_pred, digits=4, zero_division=0)}")
 
         logger.info(f"------- {dataset_name} results (LogisticRegression) -------")
-        logger.info(f"\n{classification_report(y_test, lr_pred, digits=4)}")
+        logger.info(f"\n{classification_report(y_test, lr_pred, digits=4, zero_division=0)}")
 
         logger.info(f"------- {dataset_name} results (KNeighborsClassifier) -------")
-        logger.info(f"\n{classification_report(y_test, knn_pred, digits=4)}")
+        logger.info(f"\n{classification_report(y_test, knn_pred, digits=4, zero_division=0)}")
 
         return ensemble_pred, svc_pred, lr_pred, knn_pred

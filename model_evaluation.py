@@ -64,7 +64,7 @@ def plot_model_evaluation(y_true, y_pred, out_dir="model_plots",
 
     tn, fp, fn, tp = cm.ravel()
     logger.info(f"[{file_prefix}] TP: {tp} | FP: {fp} | TN: {tn} | FN: {fn}")
-    logger.info(f"[{file_prefix}] Classification report:\n{classification_report(y_true, y_pred, digits=4)}")
+    logger.info(f"[{file_prefix}] Classification report:\n{classification_report(y_true, y_pred, digits=4, zero_division=0)}")
 
     plt.figure(figsize=(8, 6))
     sns.heatmap(
@@ -83,9 +83,9 @@ def plot_model_evaluation(y_true, y_pred, out_dir="model_plots",
 
     # Overall metrics
     acc = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred)
-    recall = recall_score(y_true, y_pred)
-    f1 = f1_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, zero_division=0)
+    recall = recall_score(y_true, y_pred, zero_division=0)
+    f1 = f1_score(y_true, y_pred, zero_division=0)
 
     logger.info(f"[{file_prefix}] Accuracy: {acc:.4f}")
     logger.info(f"[{file_prefix}] Precision: {precision:.4f}")
