@@ -166,7 +166,7 @@ def extract_features_from_files(clean_out, encrypted_out):
     out_features = "features.csv"
 
     if os.path.exists(out_features):
-        logger.skip(f"{out_features} already exists. Loading it...")
+        logger.skip(f"{out_features} already exists. Loading it...\n")
         return pd.read_csv(out_features)
 
     logger.info("Reading CLEAN files...")

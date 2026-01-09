@@ -3,9 +3,8 @@ import pandas as pd
 from file_utils import extract_zip_if_needed, extract_features_from_files
 from data_exploration import run_exploratory_visualizations
 from features_utils import pre_process_features
-from visualization_utils import plot_model_evaluation
 from detector import RansomwareDetector
-from evaluation import evaluate_model_performance
+from model_evaluation import evaluate_model_performance, plot_model_evaluation
 from logger import setup_logging, get_logger
 import logging
 
@@ -49,15 +48,15 @@ def main():
 
     # Train the three classification approaches (RF, LR, KNN)
     detector.train(df)
+    y_pred_labels = detector.evaluate_batch(df)
 
     logger.info("----------- Performance Evaluation -----------")
     # Evaluate on the training set or a split
-    y_pred_labels = detector.evaluate_batch(df)
-    # Convert labels back to 0/1 for the matrix
     y_pred_numeric = y_pred_labels.map({'ENCRYPTED': 1, 'NOT ENCRYPTED': 0})
-    # Generate the performance plots
     plot_model_evaluation(df['is_encrypted'], y_pred_numeric)
-    # evaluate_model_performance(detector, df)
+
+    logger.info("----------- False Positive Evaluation -----------")
+    # evaluate_model_performance(detector, df_clean)
 
 if __name__ == "__main__":
     main()

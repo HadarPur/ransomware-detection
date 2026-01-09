@@ -72,6 +72,7 @@ def extract_features(filepath):
     com_rat = compression_ratio(data)
     zero_byte_ratio = data.count(b'\x00') / len(data)
     chi_sq = chi_square_uniform(data)
+    chi_sq_norm = np.log1p(chi_sq)
     ser_byte_correlation = serial_byte_correlation(data)
 
     return {
@@ -85,6 +86,7 @@ def extract_features(filepath):
         "compression_ratio": com_rat,
         "zero_byte_ratio": zero_byte_ratio,
         "chi_square": chi_sq,
+        "chi_square_normalized": chi_sq_norm,
         "serial_byte_correlation": ser_byte_correlation
     }
 
@@ -111,6 +113,6 @@ def pre_process_features(df):
 
     # Save
     processed_df.to_csv("encrypted_valid_only.csv", index=False)
-    logger.info(f"Saved {len(processed_df)} rows to encrypted_valid_only.csv")
+    logger.info(f"Saved {len(processed_df)} rows to encrypted_valid_only.csv\n")
 
     return processed_df
