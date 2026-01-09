@@ -1,12 +1,13 @@
-import matplotlib.pyplot as plt
+import logging
 import os
+
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix, classification_report
-from logger import setup_logging, get_logger
-import logging
 from sklearn.decomposition import PCA
+from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.preprocessing import StandardScaler
+
+from logger import setup_logging, get_logger
 
 # Setup logging configuration to print to console
 setup_logging(level=logging.INFO, log_to_file=False)

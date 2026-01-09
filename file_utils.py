@@ -1,11 +1,12 @@
-import os
-import zlib
-import zipfile
-import pandas as pd
-from features_utils import extract_features
 import hashlib
-from logger import setup_logging, get_logger
 import logging
+import os
+import zipfile
+
+import pandas as pd
+
+from features_utils import extract_features
+from logger import setup_logging, get_logger
 
 # Setup logging configuration to print to console
 setup_logging(level=logging.INFO, log_to_file=False)

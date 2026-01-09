@@ -1,11 +1,13 @@
+import logging
 import os
+
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, \
+    confusion_matrix
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
-from logger import setup_logging, get_logger
-import logging
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix
 
+from logger import setup_logging, get_logger
 
 # Setup logging configuration to print to console
 setup_logging(level=logging.INFO, log_to_file=False)
