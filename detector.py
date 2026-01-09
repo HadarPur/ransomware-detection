@@ -6,9 +6,10 @@ from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 
-from logger import setup_logging, get_logger
+from logger import setup_logging, get_logger, logging
 
 # Setup logging configuration to print to console
 setup_logging(level=logging.INFO, log_to_file=False)
