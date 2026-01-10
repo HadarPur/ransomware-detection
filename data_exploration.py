@@ -78,14 +78,19 @@ def plot_pca(df, features=None, hue="label", out_dir="data_exploration_plots"):
 
     pca = PCA(n_components=2)
     components = pca.fit_transform(X_scaled)
+    var_exp = pca.explained_variance_ratio_  # Get the percentages
 
-    df_pca = df.copy()
+    df_pca = df.copy()  # Make sure you create the copy
     df_pca['PC1'] = components[:, 0]
     df_pca['PC2'] = components[:, 1]
 
     plt.figure(figsize=(10, 8))
     sns.scatterplot(data=df_pca, x="PC1", y="PC2", hue=hue, s=60, alpha=0.7)
-    plt.title(f"PCA Projection (2D) of Features")
+
+    # Add variance to labels
+    plt.xlabel(f"PC1 ({var_exp[0]:.1%})")
+    plt.ylabel(f"PC2 ({var_exp[1]:.1%})")
+    plt.title(f"PCA Projection (2D) - Total Variance: {sum(var_exp):.1%}")
 
     out_path = os.path.join(out_dir, "pca_2d.png")
     plt.savefig(out_path, bbox_inches="tight", dpi=150)
