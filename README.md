@@ -1,9 +1,13 @@
-# Ransomware Detection (Feature Extraction + Classifiers)
+# Ransomware Detection
 
-Description
-- Small Python project to extract features from files (clean / encrypted), visualize features, train classifiers (rule-based, statistical thresholds, ML) and produce ensemble decisions.
+### Description
+Lightweight Python project to extract per-file features (entropy, compression ratio, size, etc.), visualize them, train multiple classifiers (rule-based, threshold-based, ML), and combine their outputs with an ensemble decision to detect encrypted files.
 
-Prerequisite (If you want to work with local files)
+### Requirements
+- macOS (development tested)
+- Python 3.9+
+
+### Prerequisite (If you want to work with local files)
 - Edit the file paths at the top of `app.py` to point to your zip files before running:
   - `./files/Original_Files.zip`
   - `./files/Encrypted_Files_2.zip`
@@ -12,7 +16,7 @@ Prerequisite (If you want to work with local files)
 And change files_to_extract to True 
   - `files_to_extract = True`
 
-🧱 Environment Setup
+### 🧱 Environment Setup
 - Create and activate a virtual environment:
 ```
     python -m venv rd-env
@@ -24,7 +28,7 @@ And change files_to_extract to True
     pip install pandas scikit-learn matplotlib
 ```
 
-🏗 System Architecture
+### 🏗 System Architecture
 - `app.py` — orchestrates extraction, feature extraction, visualization, training, and prediction.
 - `file_utils.py` — zip extraction and feature extraction helpers.
 - `visualization_utils.py` — plotting functions for features.
@@ -34,7 +38,7 @@ And change files_to_extract to True
   - `extracted_files/encrypted`
   - `extracted_files/validation`
 
-🔄 High-Level Workflow
+### 🔄 High-Level Workflow
 1. Unzip provided archives into `extracted_files/*` folders.
 2. Extract features from each file (entropy, compression ratio, size, etc.).
 3. Visualize feature distributions and relationships.
@@ -46,15 +50,15 @@ And change files_to_extract to True
    - Machine learning model
 7. Combine results via an ensemble decision and output final predictions.
 
-▶️ Running the Application
-1. Ensure file paths in `app.py` are set to your zip files.
+### ▶️ Running the Application
+1. Ensure file paths in `app.py` are set to your zip files. (if needed)
 2. Activate the virtual environment (see Environment Setup).
 3. Run the app:
-```
+    ```
     python app.py
-```
+    ```
 4. Expected results:
    - `extracted_files/` populated with unzipped content.
    - Printed pandas DataFrame head showing features and predictions.
-   - Plots saved or displayed (as implemented in `visualization_utils.py`).
+   - Plots saved in the working directory under `model_plots` folder.
    - Trained ML model and scaler available in memory (or persisted if implemented).
