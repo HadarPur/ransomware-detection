@@ -62,30 +62,31 @@ class RansomwareDetector:
 
         return ensemble_pred, ab_pred, lr_pred, knn_pred
 
-    def evaluate(self, X_test, y_test, dataset_name="Test"):
+    def evaluate(self, X_test, y_test, print_overall = True ,dataset_name="Test"):
         ensemble_pred, ab_pred, lr_pred, knn_pred = self.predict_batch_labels(X_test)
 
-        logger.info(f"------- Overall {dataset_name} Dataset Results -------")
-        total_files = len(y_test)
-        encrypted_count = int(y_test.sum())
-        logger.info(f"Test files: {total_files} | Encrypted: {encrypted_count} | Clean: {total_files - encrypted_count}")
+        if print_overall:
+            logger.info(f"------- Overall {dataset_name} Dataset Results -------")
+            total_files = len(y_test)
+            encrypted_count = int(y_test.sum())
+            logger.info(f"Test files: {total_files} | Encrypted: {encrypted_count} | Clean: {total_files - encrypted_count}")
 
-        logger.info(f"Accuracy: {accuracy_score(y_test, ensemble_pred):.4f}")
-        logger.info(f"Precision: {precision_score(y_test, ensemble_pred, zero_division=0):.4f}")
-        logger.info(f"Recall: {recall_score(y_test, ensemble_pred, zero_division=0):.4f}")
-        logger.info(f"F1-score: {f1_score(y_test, ensemble_pred, zero_division=0):.4f}")
+            logger.info(f"Accuracy: {accuracy_score(y_test, ensemble_pred):.4f}")
+            logger.info(f"Precision: {precision_score(y_test, ensemble_pred, zero_division=0):.4f}")
+            logger.info(f"Recall: {recall_score(y_test, ensemble_pred, zero_division=0):.4f}")
+            logger.info(f"F1-score: {f1_score(y_test, ensemble_pred, zero_division=0):.4f}")
 
-        logger.info(f"Confusion matrix:\n{confusion_matrix(y_test, ensemble_pred)}")
-        logger.info(f"Classification report:\n{classification_report(y_test, ensemble_pred, digits=4, zero_division=0)}")
+            logger.info(f"Confusion matrix:\n{confusion_matrix(y_test, ensemble_pred)}")
+            logger.info(f"Classification report:\n{classification_report(y_test, ensemble_pred, digits=4, zero_division=0)}")
 
-        # Optional: per-model metrics (often useful)
-        logger.info(f"------- {dataset_name} results (AdaBoostClassifier) ------- ")
-        logger.info(f"\n{classification_report(y_test, ab_pred, digits=4, zero_division=0)}")
+            # Optional: per-model metrics (often useful)
+            logger.info(f"------- {dataset_name} results (AdaBoostClassifier) ------- ")
+            logger.info(f"\n{classification_report(y_test, ab_pred, digits=4, zero_division=0)}")
 
-        logger.info(f"------- {dataset_name} results (LogisticRegression) -------")
-        logger.info(f"\n{classification_report(y_test, lr_pred, digits=4, zero_division=0)}")
+            logger.info(f"------- {dataset_name} results (LogisticRegression) -------")
+            logger.info(f"\n{classification_report(y_test, lr_pred, digits=4, zero_division=0)}")
 
-        logger.info(f"------- {dataset_name} results (KNeighborsClassifier) -------")
-        logger.info(f"\n{classification_report(y_test, knn_pred, digits=4, zero_division=0)}")
+            logger.info(f"------- {dataset_name} results (KNeighborsClassifier) -------")
+            logger.info(f"\n{classification_report(y_test, knn_pred, digits=4, zero_division=0)}")
 
         return ensemble_pred, ab_pred, lr_pred, knn_pred

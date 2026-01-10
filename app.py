@@ -9,6 +9,7 @@ from features_utils import pre_process_features
 from file_utils import extract_zip_if_needed, extract_features_from_files, extract_features_clean_only
 from logger import setup_logging, get_logger
 from model_evaluation import plot_model_evaluation
+from assesst_false_positive import run_false_positive_assessment
 
 files_to_extract = False
 CLEAN_FILES_PATH = "./files/Original_Files.zip"
@@ -76,18 +77,18 @@ def main():
         test_size=0.2
     )
 
-    # Train the three classification approaches (SVC, LR, KNN)
+    # Train the three classification approaches (ad, LR, KNN)
     detector.train(X_train, y_train)
 
     logger.info("----------- Models Evaluation -----------")
 
-    train_ensemble, train_svc, train_lr, train_knn = detector.evaluate(
+    train_ensemble, train_ad, train_lr, train_knn = detector.evaluate(
         X_train, y_train, dataset_name="Train"
     )
 
     train_dir = os.path.join("model_plots", "train")
-    plot_model_evaluation(y_train, train_svc, out_dir=train_dir,
-                          title="Train - SVC Confusion Matrix", file_prefix="AdaBoostClassifier")
+    plot_model_evaluation(y_train, train_ad, out_dir=train_dir,
+                          title="Train - ad Confusion Matrix", file_prefix="AdaBoostClassifier")
     plot_model_evaluation(y_train, train_lr, out_dir=train_dir,
                           title="Train - Logistic Regression Confusion Matrix", file_prefix="LogisticRegression")
     plot_model_evaluation(y_train, train_knn, out_dir=train_dir,
@@ -96,13 +97,13 @@ def main():
     plot_model_evaluation(y_train, train_ensemble, out_dir=train_dir,
                           title="Train - Ensemble Confusion Matrix", file_prefix="Ensemble")
 
-    test_ensemble, test_svc, test_lr, test_knn = detector.evaluate(
+    test_ensemble, test_ad, test_lr, test_knn = detector.evaluate(
         X_test, y_test, dataset_name="Test"
     )
 
     test_dir = os.path.join("model_plots", "test")
-    plot_model_evaluation(y_test, test_svc, out_dir=test_dir,
-                          title="Test - SVC Confusion Matrix", file_prefix="AdaBoostClassifier")
+    plot_model_evaluation(y_test, test_ad, out_dir=test_dir,
+                          title="Test - ad Confusion Matrix", file_prefix="AdaBoostClassifier")
     plot_model_evaluation(y_test, test_lr, out_dir=test_dir,
                           title="Test - Logistic Regression Confusion Matrix", file_prefix="LogisticRegression")
     plot_model_evaluation(y_test, test_knn, out_dir=test_dir,
@@ -112,7 +113,7 @@ def main():
                           title="Test - Ensemble Confusion Matrix", file_prefix="Ensemble")
 
     logger.info("----------- Assess False Positive -----------")
-    # evaluate_model_performance(detector, clean_only_df)
+    run_false_positive_assessment(detector, clean_only_df)
 
 if __name__ == "__main__":
     main()
