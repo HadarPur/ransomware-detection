@@ -80,7 +80,7 @@ def plot_pca(df, features=None, hue="label", out_dir="data_exploration_plots"):
     components = pca.fit_transform(X_scaled)
     var_exp = pca.explained_variance_ratio_  # Get the percentages
 
-    df_pca = df.copy()  # Make sure you create the copy
+    df_pca = df.copy()
     df_pca['PC1'] = components[:, 0]
     df_pca['PC2'] = components[:, 1]
 
@@ -98,7 +98,6 @@ def plot_pca(df, features=None, hue="label", out_dir="data_exploration_plots"):
     logger.info(f"Saved PCA plot to: {out_path}")
 
 
-
 def plot_pairplot(df, features=None, hue="label", out_dir="data_exploration_plots"):
     os.makedirs(out_dir, exist_ok=True)
 
@@ -111,7 +110,6 @@ def plot_pairplot(df, features=None, hue="label", out_dir="data_exploration_plot
     plt.savefig(out_path, bbox_inches="tight", dpi=150)
     plt.close()
     logger.info(f"Saved pairplot to: {out_path}")
-
 
 
 def run_exploratory_visualizations(df):
