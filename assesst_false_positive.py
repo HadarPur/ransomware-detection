@@ -57,11 +57,13 @@ def plot_model_assessment(y_true, y_pred, out_dir="model_plots",
     os.makedirs(out_dir, exist_ok=True)
     cm = confusion_matrix(y_true, y_pred)
 
-    plt.figure(figsize=(8, 6))
+    cm = cm[:1, :]
+
+    plt.figure(figsize=(8, 3))
     sns.heatmap(
         cm, annot=True, fmt='d', cmap='Blues',
         xticklabels=['Clean', 'Encrypted'],
-        yticklabels=['Clean', 'Encrypted']
+        yticklabels=['Clean']
     )
     plt.title(title)
     plt.ylabel('Actual State')
