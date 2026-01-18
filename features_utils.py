@@ -4,6 +4,7 @@ import os
 import zlib
 
 import numpy as np
+import pandas as pd
 
 from logger import setup_logging, get_logger
 
@@ -92,7 +93,16 @@ def extract_features(filepath):
     }
 
 
-def pre_process_features(df):
+def pre_process_features(df, output_dir="data/processed"):
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "valid_only.csv")
+
+    if os.path.exists(output_path):
+        logger.skip(f"{output_path} already exists. Loading it...")
+        df = pd.read_csv(output_path)
+        logger.info(f"Found {len(df)} valid encrypted files.")
+        return df
+
     # Keep only rows where label matches the encryption status
     mask = ((df["valid_encryption"] == 1) & (df["label"] == "ENCRYPTED")) | \
            ((df["valid_encryption"] == 0) & (df["label"] == "CLEAN"))
@@ -113,7 +123,7 @@ def pre_process_features(df):
     processed_df = filtered_df.drop(columns=["valid_encryption"])
 
     # Save
-    processed_df.to_csv("encrypted_valid_only.csv", index=False)
-    logger.info(f"Saved {len(processed_df)} rows to encrypted_valid_only.csv\n")
+    processed_df.to_csv(output_path, index=False)
+    logger.info(f"Saved {len(processed_df)} rows to {output_path}\n")
 
     return processed_df

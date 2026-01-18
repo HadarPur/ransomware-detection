@@ -20,8 +20,6 @@ def extract_zip(zip_path: str, out_dir: str, password=None) -> str:
     """
     os.makedirs(out_dir, exist_ok=True)
 
-    logger.info("Start extracting: ", zip_path)
-
     with zipfile.ZipFile(zip_path, "r") as zf:
         zf.extractall(
             path=out_dir,
@@ -41,7 +39,6 @@ def extract_zip(zip_path: str, out_dir: str, password=None) -> str:
                     pwd=password.encode("utf-8") if password else None
                 )
 
-    logger.info("Extracted to:", out_dir)
     return out_dir
 
 def extract_zip_if_needed(zip_path, out_dir, password=None):
@@ -163,7 +160,7 @@ def compute_valid_encryption_for_encrypted_df(encrypted_df, encrypted_root, orig
     out["valid_encryption"] = valid_flags
     return out
 
-def extract_features_from_files(clean_out, encrypted_out):
+def extract_features_from_files(clean_out, encrypted_out, output_dir="data/pre-processed"):
     """
     Builds a features dataframe for CLEAN and ENCRYPTED datasets and assigns a
     'valid_encryption' flag.
@@ -180,7 +177,8 @@ def extract_features_from_files(clean_out, encrypted_out):
          avoiding basename collisions across variants.
       3) Still supports your original name-substring pairing logic when filenames retain originals.
     """
-    out_features = "features.csv"
+    os.makedirs(output_dir, exist_ok=True)
+    out_features = os.path.join(output_dir, "mixed.csv")
 
     if os.path.exists(out_features):
         logger.skip(f"{out_features} already exists. Loading it...")
@@ -321,7 +319,7 @@ def extract_features_from_files(clean_out, encrypted_out):
 
     return df
 
-def extract_features_clean_only(clean_only_dir, out_features="features_clean_only.csv", dataset_tag="CLEAN_ONLY"):
+def extract_features_clean_only(clean_only_dir, output_dir="data/pre-processed"):
     """
     Extract features ONLY for clean files, for false-positive evaluation.
 
@@ -333,6 +331,9 @@ def extract_features_clean_only(clean_only_dir, out_features="features_clean_onl
     This method does NOT touch encrypted_out and does NOT compute hashes/pairings.
     """
 
+    os.makedirs(output_dir, exist_ok=True)
+    out_features = os.path.join(output_dir, "clean_only.csv")
+
     if os.path.exists(out_features):
         logger.skip(f"{out_features} already exists. Loading it...")
         df = pd.read_csv(out_features)
@@ -341,6 +342,7 @@ def extract_features_clean_only(clean_only_dir, out_features="features_clean_onl
 
     logger.info(f"Reading CLEAN-ONLY files from: {clean_only_dir}")
     df = read_file_data(clean_only_dir, label="CLEAN")  # assumes you already have this helper
+    df["valid_encryption"] = 0  # CLEAN always 0
     df = df.copy()
 
     logger.info(f"Found {len(df)} clean-only files.")
@@ -348,4 +350,47 @@ def extract_features_clean_only(clean_only_dir, out_features="features_clean_onl
     logger.info(f"Saved {len(df)} rows to {out_features}")
 
     return df
+
+def split_clean_and_save(
+    clean_only_df: pd.DataFrame,
+    mixed_df: pd.DataFrame,
+    output_dir: str,
+    n_clean_val: int = 9499,
+    n_clean_to_mixed: int = 500,
+    random_state: int = 42,
+):
+    # Safety check
+    required = n_clean_val + n_clean_to_mixed
+    if len(clean_only_df) < required:
+        raise ValueError(
+            f"clean_only_df must have at least {required} samples, "
+            f"got {len(clean_only_df)}"
+        )
+
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Shuffle clean-only data
+    clean_shuffled = clean_only_df.sample(
+        frac=1, random_state=random_state
+    ).reset_index(drop=True)
+
+    # Split
+    clean_val_df = clean_shuffled.iloc[:n_clean_val]
+    clean_to_mixed_df = clean_shuffled.iloc[n_clean_val:required]
+
+    # Augment mixed dataset
+    mixed_augmented_df = pd.concat(
+        [mixed_df, clean_to_mixed_df],
+        ignore_index=True
+    )
+
+    # Save to CSV
+    clean_val_path = os.path.join(output_dir, "clean_only.csv")
+    mixed_aug_path = os.path.join(output_dir, "mixed.csv")
+
+    clean_val_df.to_csv(clean_val_path, index=False)
+    mixed_augmented_df.to_csv(mixed_aug_path, index=False)
+
+    return clean_val_df, mixed_augmented_df
 
