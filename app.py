@@ -12,7 +12,7 @@ from logger import setup_logging, get_logger
 from model_evaluation import plot_model_evaluation
 from assesst_false_positive import run_false_positive_assessment
 
-files_to_extract = True
+files_to_extract = False
 CLEAN_FILES_PATH = "./files/Original_Files.zip"
 ENCRYPTED_FILES_PATH = "./files/Encrypted_Files_2.zip"
 VALIDATION_FILES_PATH = "./files/More_Clean_Files.zip"  # for validation
